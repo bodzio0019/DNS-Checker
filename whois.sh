@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Definicje kolorów
+RED='\033[0;31m'
 BLUE='\033[1;36m'
 NC='\033[0m' # Resetowanie koloru
 
@@ -17,25 +18,30 @@ ip_addresses=$(host "$domain" | awk '/has address/ { print $4 }')
 
 # Sprawdzenie, czy zapytanie zwróciło adres IP
 if [ -z "$ip_addresses" ]; then
-  echo -e "${BLUE}Nie udało się uzyskać adresów IP dla domeny: $domain${NC}"
+  echo -e "${RED}Nie udało się uzyskać adresów IP dla domeny: $domain${NC}"
   exit 1
 fi
 
 # Wyświetlenie adresów IP i wykonanie zapytań wstecznych
 for ip_address in $ip_addresses; do
   echo -e "${BLUE}Rekordy A. Drugi dla www:${NC}"
-  host "$domain"
-  host www."$domain"
+  host "$domain" | awk '/has address/ { print $4 }'
+  host www."$domain" | awk '/has address/ { print $4 }'
   echo ""
   
   # Wykonanie zapytania wstecznego DNS na uzyskany adres IP
   echo -e "${BLUE}Host IP:${NC}"
-  host "$ip_address"
+  host "$ip_address" | awk '/domain name pointer/ { ptr = $NF } END { print ptr }'
   echo ""
 
   # Zapytanie o rekordy NS
   echo -e "${BLUE}Rekordy NS:${NC}"
-  host -t ns "$domain"
+  ns_records=$(host -t ns "$domain" | awk '/name server/ { print $NF }')
+  
+  # Wyświetlenie wyników NS bez dodatkowych informacji
+  for ns in $ns_records; do
+    echo "${ns%.}"
+  done
   echo ""
 
   # Zapytanie o rekordy MX
