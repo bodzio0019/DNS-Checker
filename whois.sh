@@ -75,4 +75,3 @@ for ip_address in $ip_addresses; do
   echo ""
 
 done
-
